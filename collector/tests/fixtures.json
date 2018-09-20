@@ -1,0 +1,59 @@
+[
+  {
+    "model": "collector.parameter",
+    "pk": "CPU",
+    "fields": {
+      "type": 0,
+      "description": "",
+      "oid": "1.1.1"
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "memory",
+    "fields": {
+      "type": 1,
+      "description": "",
+      "oid": "1.1.2"
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "cps",
+    "fields": {
+      "type": 1,
+      "description": "",
+      "oid": "1.1.3"
+    }
+  },
+  {
+    "model": "collector.host",
+    "pk": "host1",
+    "fields": {
+      "ip": "10.0.0.1",
+      "description": "",
+      "community": "watcheye",
+      "port": 161,
+      "parameters": [
+        "CPU",
+        "memory",
+        "cps"
+      ]
+    }
+  },
+  {
+    "model": "collector.host",
+    "pk": "host2",
+    "fields": {
+      "ip": "0:0:0:0:0:ffff:a00:2",
+      "description": "",
+      "community": "watcheye",
+      "port": 161,
+      "parameters": [
+        "CPU",
+        "memory",
+        "cps"
+      ]
+    }
+  }
+]

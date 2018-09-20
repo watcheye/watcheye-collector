@@ -1,0 +1,5 @@
+include LICENSE
+include README.rst
+include *.py
+recursive-include collector/locale *.mo *.po
+recursive-include collector/management *.py

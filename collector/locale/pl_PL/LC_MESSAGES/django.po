@@ -1,0 +1,141 @@
+# Polish translation of watcheye-collector.
+# Copyright (C) 2018 Andrzej Mateja
+# This file is distributed under the same license as the watcheye-collector package.
+# Andrzej Mateja <mateja.and@gmail.com>, 2018.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-09-19 10:19+0000\n"
+"PO-Revision-Date: 2018-09-19 12:41+0000\n"
+"Last-Translator: Andrzej Mateja <mateja.and@gmail.com>\n"
+"Language-Team: Polish <mateja.and@gmail.com>\n"
+"Language: pl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: collector/admin.py:18 collector/admin.py:42
+msgid "SNMP"
+msgstr "SNMP"
+
+#: collector/admin.py:67
+msgid "in use?"
+msgstr "używany?"
+
+#: collector/forms.py:37
+msgid "Invalid value."
+msgstr "Nieprawidłowa wartość."
+
+#: collector/models.py:13
+msgid "float"
+msgstr "zmiennoprzecinkowy"
+
+#: collector/models.py:14
+msgid "integer"
+msgstr "całkowity"
+
+#: collector/models.py:15
+msgid "string"
+msgstr "napis"
+
+#: collector/models.py:16
+msgid "boolean"
+msgstr "zero-jedynkowy"
+
+#: collector/models.py:19 collector/models.py:53
+msgid "name"
+msgstr "nazwa"
+
+#: collector/models.py:22
+msgid "Unique and unchangeable parameter identifier."
+msgstr "Niepowtarzalny i niezmienny identyfikator parametru."
+
+#: collector/models.py:25
+msgid "type"
+msgstr "typ"
+
+#: collector/models.py:27
+msgid "Unchangeable parameter type."
+msgstr "Niezmienny typ parametru."
+
+#: collector/models.py:30 collector/models.py:63
+msgid "description"
+msgstr "opis"
+
+#: collector/models.py:32
+msgid "A few words to show e.g. parameter purpose or meaning."
+msgstr "Kilka słów dla objaśnienia np. celu lub znaczenia parametru."
+
+#: collector/models.py:35
+msgid "OID"
+msgstr "OID"
+
+#: collector/models.py:39
+msgid "Object Identifier uniquely identifies monitored parameter."
+msgstr "Identyfikator obiektu jednoznacznie określający monitorowany parametr."
+
+#: collector/models.py:44
+msgid "Parameter"
+msgstr "Parametr"
+
+#: collector/models.py:45
+msgid "Parameters"
+msgstr "Parametry"
+
+#: collector/models.py:56
+msgid "Unique and unchangeable host identifier."
+msgstr "Niepowtarzalny i niezmienny identyfikator hosta."
+
+#: collector/models.py:59
+msgid "IP address"
+msgstr "Adres IP"
+
+#: collector/models.py:60
+msgid "Internet Protocol version 4 or 6 address."
+msgstr "Adres protokołu internetowego w wersji 4 lub 6."
+
+#: collector/models.py:65
+msgid "A few words to show e.g. host purpose or location."
+msgstr "Kilka słów dla objaśnienia np. celu lub lokalizacji hosta."
+
+#: collector/models.py:71
+msgid "parameters"
+msgstr "parametry"
+
+#: collector/models.py:72
+msgid "Choosing parameters enables their collection for the host.<br/>"
+msgstr "Wybranie parametrów aktywuje ich zbieranie dla hosta.<br/>"
+
+#: collector/models.py:76
+msgid "community name"
+msgstr "nazwa społeczności"
+
+#: collector/models.py:80
+msgid ""
+"SNMP mandates that the SNMP agents should accept request messages only if "
+"the community string in the message matches its community name. <b>Ensure "
+"same value is set on the device.</b>"
+msgstr ""
+"SNMP wymaga aby agenty SNMP przyjmowały zapytania tylko, jeśli nazwa "
+"społeczności zawarta w wiadomości zgadza się z ich nazwą społeczności. "
+"<b>Upewnij się, że takie same wartości są skonfigurowane na urządzeniu.</b>"
+
+#: collector/models.py:86
+msgid "port"
+msgstr "port"
+
+#: collector/models.py:88
+msgid "Set SNMP GET port. <b>Ensure same value is set on the device.</b>"
+msgstr ""
+"Ustaw port SNMP GET. <b>Upewnij się, że takie same wartości są "
+"skonfigurowane na urządzeniu.</b>"
+
+#: collector/models.py:93
+msgid "Host"
+msgstr "Host"
+
+#: collector/models.py:94
+msgid "Hosts"
+msgstr "Hosty"

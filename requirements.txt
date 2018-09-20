@@ -1,0 +1,5 @@
+celery>=4.2.0
+django>=2.0.0
+influxdb>=5.2.0
+pyasn1
+pysnmp
