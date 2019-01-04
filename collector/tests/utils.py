@@ -3,7 +3,7 @@ import datetime
 from django.test import TestCase
 from pysnmp.hlapi import ObjectIdentity, ObjectType
 
-from .. import constants
+from .. import constants, models
 
 
 def make_timestamp() -> float:
@@ -23,26 +23,64 @@ class DataTestCase(TestCase):
 
     @classmethod
     def setUpTestData(cls):
+        cls.hostname = 'host1'
+        host = models.Host.objects.get(name=cls.hostname)
+
         base_payload = {
-            'host': 'host1',
-            'parameter': 'CPU',
-            'timestamp': make_timestamp(),
+            'host': cls.hostname,
+            'timestamp': make_timestamp()
         }
 
+        cls.payload = dict(base_payload)
+        cls.payload['samples'] = [
+            {
+                'parameter': parameter.name,
+                'instance': instance.name,
+                'value': 1
+            }
+            for instance in host.instances.all()
+            for parameter in instance.group.parameters.all()
+        ]
+
         cls.payload_int = dict(base_payload)
-        cls.payload_int['value'] = 10
+        cls.payload_int['samples'] = [
+            {
+                'parameter': 'CPU',
+                'value': 10
+            }
+        ]
 
         cls.payload_float = dict(base_payload)
-        cls.payload_float['value'] = 10.1
+        cls.payload_float['samples'] = [
+            {
+                'parameter': 'CPU',
+                'value': 10.1
+            }
+        ]
 
         cls.payload_bool = dict(base_payload)
-        cls.payload_bool['value'] = True
+        cls.payload_bool['samples'] = [
+            {
+                'parameter': 'CPU',
+                'value': True
+            }
+        ]
 
         cls.payload_str = dict(base_payload)
-        cls.payload_str['value'] = 'foo'
+        cls.payload_str['samples'] = [
+            {
+                'parameter': 'CPU',
+                'value': 'spam'
+            }
+        ]
 
         cls.payload_array = dict(base_payload)
-        cls.payload_array['value'] = ['a', 'b']
+        cls.payload_array['samples'] = [
+            {
+                'parameter': 'CPU',
+                'value': ['spam', 'ham', 'egg']
+            }
+        ]
 
 
 def get_cmd_factory(cls, value):

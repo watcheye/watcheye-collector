@@ -15,7 +15,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--username',
             required=True,
-            help='Username of account with admin privileges.',
+            help='Username of account with admin privileges.'
         )
         parser.add_argument(
             '--password',
@@ -51,7 +51,7 @@ class Command(BaseCommand):
             host=settings.INFLUXDB_HOST,
             port=getattr(settings, 'INFLUXDB_PORT', INFLUXDB_PORT),
             username=options['username'],
-            password=password,
+            password=password
         )
         try:
             client.create_database(database)
@@ -77,7 +77,7 @@ class Command(BaseCommand):
         try:
             client.create_user(
                 username=settings.INFLUXDB_USERNAME,
-                password=settings.INFLUXDB_PASSWORD,
+                password=settings.INFLUXDB_PASSWORD
             )
         except influxdb.exceptions.InfluxDBClientError as e:
             if e.content != 'user already exists':

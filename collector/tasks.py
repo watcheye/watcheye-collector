@@ -1,21 +1,21 @@
 import datetime
-import functools
 import ipaddress
 import typing
 
-from celery import group, shared_task
+import celery
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from influxdb import InfluxDBClient
+from pyasn1.type.univ import Null
 from pysnmp.hlapi import (CommunityData, ContextData, ObjectIdentity,
                           ObjectType, SnmpEngine, Udp6TransportTarget,
                           UdpTransportTarget, getCmd)
 
-from .constants import (EPOCH, INFLUXDB_DATABASE, INFLUXDB_MEASUREMENT,
-                        INFLUXDB_PORT)
-from .models import Host, Parameter
+from .constants import EPOCH, INFLUXDB_DATABASE, INFLUXDB_PORT
+from .models import Group, Host, Instance, Parameter
 
-SNMP_MAX_PARAMETERS_IN_QUERY = 8
+SNMP_MAX_PARAMETERS_IN_QUERY = 32
+INFLUXDB_BATCH_SIZE = getattr(settings, 'INFLUXDB_BATCH_SIZE', 10000)
 logger = get_task_logger(__name__)
 casters = {
     Parameter.BOOLEAN: bool,
@@ -23,212 +23,358 @@ casters = {
     Parameter.FLOAT: float,
     Parameter.STRING: str
 }
-t_sample = typing.Union[bool, int, float, str]
-t_samples_seq = typing.Sequence[typing.Tuple[str, t_sample]]
-t_parameters_seq = typing.Sequence[typing.Tuple[str, str]]
+
+t_sample_value = typing.Union[bool, int, float, str]
+
+# parameter name, instance name, value
+t_http_sample = typing.Tuple[str, str, t_sample_value]
+
+t_http_samples = typing.Sequence[t_http_sample]
+
+# OID, value
+t_snmp_sample = typing.Tuple[str, t_sample_value]
+
+# single snmp_harvester task returns just a portion of data
+t_snmp_samples_chunk = typing.Sequence[t_snmp_sample]
+
+# group of snmp_harvester tasks returns full set of data
+t_snmp_samples = typing.Sequence[t_snmp_samples_chunk]
+
+t_samples = typing.Union[t_http_samples, t_snmp_samples]
 
 
-def unpack(func: typing.Callable) -> typing.Callable:
+def aggregator() -> typing.Iterator[typing.Tuple[str, str, int,
+                                                 str, typing.List[str]]]:
     """
-    Celery task decorator allowing conveniently chaining tasks.
-    By default result of predecessor is placed as first argument of
-    successor's signature. Consider following tasks:
+    Iterates over hosts producing settings for SNMP query.
 
-    @task
-    def add_and_subtract(x, y):
-    return x - y, x + y
-
-
-    @task
-    def multiply(a, b):
-        return a * b
-
-    Chaining (add_and_subtract.s(4, 2) | multiply.s()).apply_async() is
-    not possible. It would end up with TypeError like calling
-    multiply((2, 6)). Argument a instead of int variable gets
-    tuple of ints and required argument b is missing.
-
-    By decorating a task with unpack decorator such chaining is
-    possible. If predecessor returns a dict kwargs mode is assumed.
-
-    http://docs.celeryproject.org/en/latest/userguide/canvas.html#chains
+    :return: tuple matching to snmp_harvester arguments
     """
-    @functools.wraps(func)
-    def _wrapper(*args, **kwargs):
-        if not kwargs and len(args) == 1:
-            if isinstance(args[0], tuple):
-                return func(*args[0])
-            if isinstance(args[0], dict):
-                return func(**args[0])
-        return func(*args, **kwargs)
-    return _wrapper
-
-
-def aggregator() -> typing.Iterator[dict]:
-    """
-    Not to overload monitored devices with too many parameters in single
-    SNMP GET query all parameters for each host are divided into chunks.
-    Size of a chunk is defined by SNMP_MAX_PARAMETERS_IN_QUERY constant.
-
-    :return: dict matching to snmp_harvester arguments
-    """
-    last_hostname = last_ip = last_port = last_community = None
-    buff = []
-    queryset = Host.parameters.through.objects.exclude(
-        host__community=''
-    ).exclude(
-        parameter__oid=''
-    ).values_list(
-        'host__name', 'parameter__name', 'host__ip',
-        'host__port', 'host__community', 'parameter__oid'
-    ).order_by(
-        'host__name'
+    queryset = Host.objects.exclude(
+        community=''
+    ).prefetch_related(
+        'instances', 'instances__group', 'instances__group__parameters'
     )
-    for hostname, parameter, ip, port, community, oid in queryset:
-        if (hostname != last_hostname or
-                len(buff) == SNMP_MAX_PARAMETERS_IN_QUERY) and buff:
-            yield {
-                'host': last_hostname,
-                'ip': last_ip,
-                'port': last_port,
-                'community': last_community,
-                'parameters': buff
-            }
-            buff = []
-        last_hostname = hostname
-        last_ip = ip
-        last_port = port
-        last_community = community
-        buff.append([oid, parameter])
-    if buff:
-        yield {
-            'host': last_hostname,
-            'ip': last_ip,
-            'port': last_port,
-            'community': last_community,
-            'parameters': buff
-        }
+    for host in queryset:
+
+        parameters = [
+            compose_oid(group=instance.group,
+                        parameter=parameter,
+                        instance=instance)
+            for instance in host.instances.all()
+            for parameter in instance.group.parameters.all()
+            if instance.group.oid
+        ]
+        if parameters:
+            yield host.name, host.ip, host.port, host.community, parameters
 
 
-@shared_task
-def snmp_scheduler():
+def compose_oid(group: Group, parameter: Parameter, instance: Instance) -> str:
     """
-    Orchestrates parameter gathering and storing results do database.
+    Composes OID or OID-like identifier uniquely identifying a sample.
+
+    :param group: sample's Group object instance
+    :param parameter: sample's Parameter object instance
+    :param instance: sample's Instance object instance
+    :return: sample's identifier
+    """
+    if group.oid:
+        template = '{group.oid}.{parameter.oid}.{instance.oid}'
+    else:
+        template = '{group.name}:{parameter.name}:{instance.name}'
+    return template.format(group=group,
+                           parameter=parameter,
+                           instance=instance)
+
+
+def chunks(vector: typing.Sequence) -> typing.Sequence:
+    """
+    Slices vector into chunks not longer than
+    SNMP_MAX_PARAMETERS_IN_QUERY constant.
+
+    :param vector: possibly too long vector to be chopped
+    :return: slices of vector
+    """
+    for i in range(0, len(vector), SNMP_MAX_PARAMETERS_IN_QUERY):
+        yield vector[i:i + SNMP_MAX_PARAMETERS_IN_QUERY]
+
+
+@celery.shared_task
+def snmp_scheduler() -> None:
+    """
+    Orchestrates parameter gathering and storing results to database.
     Instead of delegating multiple tasks one super task is instantiated
     and such task is scheduled for periodic execution.
 
     http://docs.celeryproject.org/en/latest/userguide/configuration.html#beat-schedule
     """
-    group(
-        snmp_harvester.s(**kwargs) | add_samples.s()
-        for kwargs in aggregator()
+    celery.group(
+        celery.chord(
+            (snmp_harvester.s(ip, port, community, parameters_chunk)
+             for parameters_chunk in chunks(parameters)),
+            add_samples.s(host=host)
+        )
+        for host, ip, port, community, parameters in aggregator()
     ).delay()
 
 
-@shared_task
-@unpack
-def add_samples(host: str, timestamp: float, samples: t_samples_seq) -> None:
+class ResultPacker:
+    """
+    Packs samples into bundles to be written into the same measurement
+    with the same sets of tags.
+    """
+    def __init__(self, host: Host,
+                 mapping: typing.Dict[str, t_sample_value]) -> None:
+        """
+        Constructor of new ResultPacker objects.
+
+        :param host: Host object which samples belong to.
+        :param mapping: maps OID-like sample identifiers to theirs value
+        """
+        self.host = host
+        self.mapping = mapping
+        self._global_tags = None
+
+    @classmethod
+    def snmp(cls, host: Host, samples: t_snmp_samples):
+        """
+        Alternative "constructor" for SNMP samples adjusting
+        theirs structure before calling actual constructor.
+
+        :param host: Host object which samples belong to.
+        :param samples: chunks of SNMP samples
+        :return: ResultPacker instance
+        """
+        mapping = {
+            oid: value
+            for sample in samples
+            for oid, value in sample
+        }
+        return cls(host, mapping)
+
+    @classmethod
+    def http(cls, host: Host, samples: t_http_samples):
+        """
+        Alternative "constructor" for HTTP samples adjusting
+        theirs structure before calling actual constructor.
+
+        :param host: Host object which samples belong to.
+        :param samples: chunks of HTTP samples
+        :return: ResultPacker instance
+        """
+        mapping = {}
+        samples_tree = {}
+        missing = []
+        for parameter, instance, value in samples:
+            try:
+                samples_tree[parameter][instance] = value
+            except KeyError:
+                samples_tree[parameter] = {instance: value}
+
+        for instance in host.instances.all():
+            for parameter in instance.group.parameters.all():
+                try:
+                    value = samples_tree[parameter.name].pop(instance.name)
+                except KeyError:
+                    missing.append([parameter.name, instance.name])
+                else:
+                    oid = compose_oid(
+                        group=instance.group,
+                        parameter=parameter,
+                        instance=instance)
+                    mapping[oid] = value
+        unknown = [
+            [parameter, instance]
+            for parameter, instances in samples_tree.items()
+            for instance in instances
+        ]
+        if missing:
+            elements = ', '.join('#'.join(row) for row in missing)
+            logger.error(
+                'Missing samples: {elements}.'.format(elements=elements)
+            )
+        if unknown:
+            elements = ', '.join('#'.join(row) for row in unknown)
+            logger.warning(
+                'Unknown samples: {elements}.'.format(elements=elements)
+            )
+
+        return cls(host, mapping)
+
+    @property
+    def global_tags(self) -> typing.Dict[str, t_sample_value]:
+        """
+        Host specific tags comes from scalar indexing parameters,
+        host name and tags themselves.
+
+        :return: tags as name to value mapping
+        """
+        if self._global_tags is not None:
+            return self._global_tags
+        tags = {tag_value.tag_id: tag_value.value
+                for tag_value in self.host.tag_values.all()}
+        tags['host'] = self.host.name
+        for instance in self.host.instances.all():
+            if instance.group.type == Group.SCALAR:
+                tags.update(self.values_for_instance(instance, True))
+        self._global_tags = tags
+        return tags
+
+    def tags(self, instance) -> typing.Dict[str, t_sample_value]:
+        """
+        Instance specific tags - host tags enriched with instance name
+        and tabular indexing parameters.
+
+        :param instance: Host's parameters Instance object
+        :return: tags as name to value mapping
+        """
+        t = dict(self.global_tags)
+        if instance.group.type == Group.TABULAR:
+            t.update(self.values_for_instance(instance, True))
+            t['instance'] = instance.name
+        return t
+
+    def fields(self, instance) -> typing.Dict[str, t_sample_value]:
+        """
+        Instance specific fields - samples which are not considered as
+        indexing parameters.
+
+        :param instance: Host's parameters Instance object
+        :return: fields as name to value mapping
+        """
+        return dict(self.values_for_instance(instance, False))
+
+    def values_for_instance(self, instance: Instance,
+                            indexing: bool) -> typing.Iterator[t_snmp_sample]:
+        """
+        Iterates through parameters of given instance and casts
+        gathered values.
+
+        :param instance: process parameters for this instance only
+        :param indexing: process indexing or non-indexing parameters
+        :return: tuple of parameter name and value
+        """
+        for parameter in instance.group.parameters.all():
+            oid = compose_oid(
+                group=instance.group,
+                parameter=parameter,
+                instance=instance
+            )
+            if oid in self.mapping and parameter.indexing == indexing:
+                value = self.mapping.pop(oid)
+                target_type = casters[parameter.type]
+
+                try:
+                    yield parameter.name, target_type(value)
+                except (ValueError, TypeError):
+                    logger.error(
+                        'Cannot cast %(value)s of %(actual_type)s '
+                        'to %(target_type)s.',
+                        {
+                            'value': value,
+                            'target_type': target_type.__name__,
+                            'actual_type': type(value).__name__
+                        }
+                    )
+
+
+@celery.shared_task
+def add_samples(samples: t_samples, host: str, mode: bool = True,
+                timestamp: float = None) -> None:
     """
     Inserts multiple samples into database in a single query.
 
     :param host: host name
-    :param timestamp: timestamp as seconds from epoch
     :param samples: list of pairs: parameter name and its value
+    :param mode: indicates origin of samples: True - SNMP, False - HTTP
+    :param timestamp: timestamp as seconds from epoch
     """
-    mapping = dict(samples)
-    fields = {}
-    for parameter in Parameter.objects.filter(host__name=host,
-                                              name__in=mapping.keys()):
-        value = mapping[parameter.name]
-        logger.debug(
-            '%(timestamp)s %(parameter)s@%(host)s = %(value)s',
-            {'host': host, 'parameter': parameter.name,
-             'timestamp': timestamp, 'value': value}
-        )
-        # cast value to the right type
-        actual_type = type(value)
-        target_type = casters[parameter.type]
-        try:
-            fields[parameter.name] = target_type(value)
-        except (ValueError, TypeError):
-            logger.error(
-                'Cannot cast %(value)s of %(actual_type)s '
-                'to %(target_type)s.',
-                {'value': value, 'target_type': target_type.__name__,
-                 'actual_type': actual_type.__name__}
-            )
+    try:
+        host = Host.objects.prefetch_related(
+            'tag_values', 'instances', 'instances__group',
+            'instances__group__parameters'
+        ).get(name=host)
+    except Host.DoesNotExist:
+        logger.error('Host {host} was not found.'.format(host=host))
+        return
 
-    if fields:
-        client = InfluxDBClient(
-            host=settings.INFLUXDB_HOST,
-            port=getattr(settings, 'INFLUXDB_PORT', INFLUXDB_PORT),
-            username=settings.INFLUXDB_USERNAME,
-            password=settings.INFLUXDB_PASSWORD,
-            database=getattr(settings, 'INFLUXDB_DATABASE', INFLUXDB_DATABASE)
-        )
-        client.write_points(
-            [
+    if timestamp is None:
+        timestamp = (datetime.datetime.utcnow() - EPOCH).total_seconds()
+    if mode:
+        packer = ResultPacker.snmp(host, samples)
+    else:
+        packer = ResultPacker.http(host, samples)
+
+    client = InfluxDBClient(
+        host=settings.INFLUXDB_HOST,
+        port=getattr(settings, 'INFLUXDB_PORT', INFLUXDB_PORT),
+        username=settings.INFLUXDB_USERNAME,
+        password=settings.INFLUXDB_PASSWORD,
+        database=getattr(settings, 'INFLUXDB_DATABASE', INFLUXDB_DATABASE)
+    )
+
+    tt = int(timestamp / 60)
+    points = []
+    for instance in host.instances.all():
+        fields = packer.fields(instance)
+        tags = packer.tags(instance)
+        if fields:
+            points.append(
                 {
-                    'measurement': getattr(settings, 'INFLUXDB_MEASUREMENT',
-                                           INFLUXDB_MEASUREMENT),
-                    'time': int(timestamp / 60),
-                    'fields': fields
+                    'measurement': instance.group.name,
+                    'time': tt,
+                    'fields': fields,
+                    'tags': tags
                 }
-            ],
+            )
+    if points:
+        client.write_points(
+            points=points,
             time_precision='m',
-            tags={
-                'host': host,
-            }
+            batch_size=INFLUXDB_BATCH_SIZE
         )
-    not_indexed_fields = set(mapping.keys()) - set(fields.keys())
+
+    not_indexed_fields = set(packer.mapping.keys())
     if not_indexed_fields:
         logger.warning(
             'Not indexed fields %(fields)s for host %(host)s.',
             {
-                'fields': ', '.join(sorted(not_indexed_fields)),
+                'fields': ', '.join(not_indexed_fields),
                 'host': host
             }
         )
 
 
-@shared_task
-def snmp_harvester(host: str, ip: str, port: int, community: str,
-                   parameters: t_parameters_seq) -> dict:
+@celery.shared_task
+def snmp_harvester(ip: str, port: int, community: str,
+                   parameters: typing.Iterable[str]) -> t_snmp_samples_chunk:
     """
     Fires SNMP GET query at endpoint defined by ip and port. The query
-    consists all of oids defined in parameters argument.
+    consists all of OIDs defined in parameters argument.
 
-    :param host: host name
     :param ip: host IP address
     :param port: SNMP port number
     :param community: community name
-    :param parameters: list of corresponding pairs: oid and
-      parameter name
-    :returns: a dict with name of host, timestamp as seconds from epoch,
-      and samples as list of pairs: parameter name and its collected
-      value.
+    :param parameters: list of OIDs
+    :returns: samples as list of pairs: OID and its collected value
     """
     if ipaddress.ip_address(ip).version == 4:
         transport = UdpTransportTarget
     else:
         transport = Udp6TransportTarget
-    parameters = dict(parameters)
 
     result = getCmd(
         SnmpEngine(),
         CommunityData(community, mpModel=1),
         transport((ip, port)),
         ContextData(),
-        *[ObjectType(ObjectIdentity(oid)) for oid in parameters.keys()]
+        *[ObjectType(ObjectIdentity(oid)) for oid in parameters]
     )
 
     _error_indication, _error_status, _error_index, var_binds = next(result)
 
-    now = datetime.datetime.utcnow().replace(second=0, microsecond=0)
-    return {
-        'host': host,
-        'timestamp': (now - EPOCH).total_seconds(),
-        'samples': [
-            [parameters[str(name)], value._value] for name, value in var_binds
-        ]
-    }
+    return [
+        (str(name), value._value)
+        for name, value in var_binds
+        if not isinstance(value, Null)
+    ]

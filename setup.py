@@ -37,10 +37,10 @@ setup(
         'Topic :: Internet :: WWW/HTTP'
     ],
     install_requires=[
-        'celery>=4.2.0',
+        'celery[redis]>=4.2.0',
         'django>=2.0.0',
         'influxdb>=5.2.0',
         'pyasn1',
-        'pysnmp',
+        'pysnmp'
     ]
 )

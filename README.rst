@@ -30,17 +30,16 @@ Collector uses `InfluxDB <https://portal.influxdata.com/downloads>`_
 time series database for storing monitoring data samples and `django
 supported database
 <https://docs.djangoproject.com/en/dev/ref/databases/>`_ for storing
-configuration. In order to use SNMP GET interface please install also
-`Celery supported broker
-<http://docs.celeryproject.org/en/latest/getting-started/brokers/>`_.
+configuration and
+`Redis broker
+<http://docs.celeryproject.org/en/latest/getting-started/brokers/redis.html>`_.
 
 Quick start
 -----------
 
 Assuming InfluxDB is properly configured (`setting up authentication
 <https://docs.influxdata.com/influxdb/latest/administration/authentication_and_authorization/#set-up-authentication>`_
-is recommended) and so is broker of one's choice just a few steps are
-required.
+is recommended) and so is Redis broker just a few steps are required.
 
 #. Install ``watcheye-collector``:
 
@@ -57,6 +56,10 @@ required.
           'collector',
       ]
 
+#. Integrate Celery with your django project (see `Celery documentation
+   <http://docs.celeryproject.org/en/latest/django/first-steps-with-django.html>`_
+   for further reference).
+
 #. Add InfluxDB connection and Celery configuration in ``settings.py``
    file:
 
@@ -72,13 +75,12 @@ required.
               'schedule': crontab(minute='*')
           }
       }
-      CELERY_RESULT_BACKEND = 'file:///var/celery/results'
-      CELERY_BROKER_URL = 'amqp://my_broker_host'
+      CELERY_RESULT_BACKEND = 'redis://my_broker_host/0'
+      CELERY_BROKER_URL = 'redis://my_broker_host/1'
 
       # to use non-default values configure also:
       INFLUXDB_PORT = 1234
       INFLUXDB_DATABASE = 'my_database'
-      INFLUXDB_MEASUREMENT = 'my_measurement'
       INFLUXDB_RETENTION_POLICY = 'my_policy'
       INFLUXDB_DURATION = '30d'
 
@@ -116,5 +118,6 @@ required.
 
       $ curl -i -X POST \
       -H "Content-Type: application/json" \
-      -d '{"host":"test", "parameter":"CPU", "timestamp": 1500000000, "value": 10}' \
+      -d '{"host":"test", "timestamp": 1500000000,
+      "samples": [{"parameter":"CPU", "value": 10}]}' \
       http://127.0.0.1:8000/collector/

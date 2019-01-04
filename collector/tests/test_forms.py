@@ -2,10 +2,10 @@ from .utils import DataTestCase
 from .. import forms
 
 
-class SampleFormTests(DataTestCase):
+class SeriesFormTests(DataTestCase):
     """
     Tests form validity especially taking into account
-    its clean_value method.
+    its clean_samples method.
     """
 
     def test_form(self):
@@ -19,18 +19,19 @@ class SampleFormTests(DataTestCase):
             self.payload_bool,
             self.payload_str
         ]:
-            with self.subTest(value=payload['value']):
-                form = forms.SampleForm(data=payload)
+            with self.subTest(payload=payload):
+                form = forms.SeriesForm(data=payload)
                 self.assertTrue(form.is_valid())
-                cleaned_value = form.cleaned_data['value']
-                value = payload['value']
-                self.assertEqual(value, cleaned_value)
-                self.assertEqual(type(cleaned_value), type(value))
+                for i, sample in enumerate(form.cleaned_data['samples']):
+                    cleaned_value = sample['value']
+                    value = payload['samples'][i]['value']
+                    self.assertEqual(value, cleaned_value)
+                    self.assertEqual(type(cleaned_value), type(value))
 
     def test_form_wrong_type(self):
         """
         Tests form against payload with nonempty value of unsupported
         type.
         """
-        form = forms.SampleForm(data=self.payload_array)
+        form = forms.SeriesForm(data=self.payload_array)
         self.assertFalse(form.is_valid())

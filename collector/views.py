@@ -19,13 +19,21 @@ def index(request):
         payload = json.loads(request.body.decode())
     except json.JSONDecodeError:
         return HttpResponseBadRequest()
-    form = forms.SampleForm(data=payload)
+    form = forms.SeriesForm(data=payload)
     if form.is_valid():
         data = form.cleaned_data
         task = tasks.add_samples.delay(
+            samples=[
+                [
+                    sample['parameter'],
+                    sample['instance'],
+                    sample['value']
+                ]
+                for sample in data['samples']
+            ],
             host=data['host'],
-            timestamp=data['timestamp'],
-            samples=[[data['parameter'], data['value']]]
+            mode=False,
+            timestamp=data['timestamp']
         )
         response = HttpResponse(status=202)
         response['Location'] = reverse('collector:job',

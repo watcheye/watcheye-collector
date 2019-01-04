@@ -1,30 +1,218 @@
 [
   {
-    "model": "collector.parameter",
-    "pk": "CPU",
+    "model": "collector.group",
+    "pk": "LDAPv3",
     "fields": {
+      "type": false,
+      "description": "Fake LDAPv3 group just for testing purposes.",
+      "oid": "1.1"
+    }
+  },
+  {
+    "model": "collector.group",
+    "pk": "SNMP",
+    "fields": {
+      "type": false,
+      "description": "",
+      "oid": "1.3.6.1.2.27.4"
+    }
+  },
+  {
+    "model": "collector.group",
+    "pk": "tcp",
+    "fields": {
+      "type": false,
+      "description": "",
+      "oid": "1.3.6.1.2.1.6"
+    }
+  },
+  {
+    "model": "collector.group",
+    "pk": "NonSNMP",
+    "fields": {
+      "type": false,
+      "description": "",
+      "oid": ""
+    }
+  },
+  {
+    "model": "collector.group",
+    "pk": "interface",
+    "fields": {
+      "type": true,
+      "description": "Contains information on the entity's interfaces.",
+      "oid": "1.3.6.1.2.1.2.2.1"
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "spam",
+    "fields": {
+      "group": "LDAPv3",
       "type": 0,
       "description": "",
-      "oid": "1.1.1"
+      "indexing": false,
+      "oid": 1
     }
   },
   {
     "model": "collector.parameter",
-    "pk": "memory",
+    "pk": "ham",
     "fields": {
+      "group": "LDAPv3",
       "type": 1,
       "description": "",
-      "oid": "1.1.2"
+      "indexing": false,
+      "oid": 2
     }
   },
   {
     "model": "collector.parameter",
-    "pk": "cps",
+    "pk": "egg",
     "fields": {
+      "group": "LDAPv3",
       "type": 1,
       "description": "",
-      "oid": "1.1.3"
+      "indexing": false,
+      "oid": 3
     }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "SNMP protocol identifier",
+    "fields": {
+      "group": "SNMP",
+      "type": 2,
+      "description": "",
+      "indexing": true,
+      "oid": 25
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "tcpCurrEstab",
+    "fields": {
+      "group": "tcp",
+      "type": 1,
+      "description": "Number of TCP connections for which the current state is either ESTABLISHED or CLOSE-WAIT.",
+      "indexing": false,
+      "oid": 9
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "tcpRetransSegs",
+    "fields": {
+      "group": "tcp",
+      "type": 1,
+      "description": "Total number of segments retransmitted - that is, the number of TCP segments transmitted containing one or more previously transmitted octets.",
+      "indexing": false,
+      "oid": 12
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "ifOperStatus",
+    "fields": {
+      "group": "interface",
+      "type": 1,
+      "description": "Current operational state of the interface.",
+      "indexing": true,
+      "oid": 8
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "ifInOctets",
+    "fields": {
+      "group": "interface",
+      "type": 1,
+      "description": "Total number of octets received on the interface, including framing characters.",
+      "indexing": false,
+      "oid": 10
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "ifInDiscards",
+    "fields": {
+      "group": "interface",
+      "type": 1,
+      "description": "Number of inbound packets which were chosen to be discarded even though no errors had been detected to prevent their being deliverable to a higher-layer protocol. One possible reason for discarding such a packet could be to free up buffer space.",
+      "indexing": false,
+      "oid": 13
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "ifInErrors",
+    "fields": {
+      "group": "interface",
+      "type": 1,
+      "description": "Number of inbound packets that contained errors preventing them from being deliverable to a higher-layer protocol.",
+      "indexing": false,
+      "oid": 14
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "ifInUnknownProtos",
+    "fields": {
+      "group": "interface",
+      "type": 1,
+      "description": "Number of packets received via the interface which were discarded because of an unknown or unsupported protocol.",
+      "indexing": false,
+      "oid": 15
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "ifOutOctets",
+    "fields": {
+      "group": "interface",
+      "type": 1,
+      "description": "Total number of octets transmitted out of the interface, including framing characters.",
+      "indexing": false,
+      "oid": 16
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "ifOutDiscards",
+    "fields": {
+      "group": "interface",
+      "type": 1,
+      "description": "Number of outbound packets which were chosen to be discarded even though no errors had been detected to prevent their being transmitted. One possible reason for discarding such a packet could be to free up buffer space.",
+      "indexing": false,
+      "oid": 19
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "ifOutErrors",
+    "fields": {
+      "group": "interface",
+      "type": 1,
+      "description": "Number of outbound packets that could not be transmitted because of errors.",
+      "indexing": false,
+      "oid": 20
+    }
+  },
+  {
+    "model": "collector.parameter",
+    "pk": "ifOutQLen",
+    "fields": {
+      "group": "interface",
+      "type": 1,
+      "description": "Length of the output packet queue (in packets).",
+      "indexing": false,
+      "oid": 21
+    }
+  },
+  {
+    "model": "collector.tag",
+    "pk": "cluster",
+    "fields": {}
   },
   {
     "model": "collector.host",
@@ -33,27 +221,144 @@
       "ip": "10.0.0.1",
       "description": "",
       "community": "watcheye",
-      "port": 161,
-      "parameters": [
-        "CPU",
-        "memory",
-        "cps"
-      ]
+      "port": 161
     }
   },
   {
     "model": "collector.host",
     "pk": "host2",
     "fields": {
-      "ip": "0:0:0:0:0:ffff:a00:2",
+      "ip": "::ffff:10.0.0.2",
       "description": "",
       "community": "watcheye",
-      "port": 161,
-      "parameters": [
-        "CPU",
-        "memory",
-        "cps"
-      ]
+      "port": 161
+    }
+  },
+  {
+    "model": "collector.host",
+    "pk": "host3",
+    "fields": {
+      "ip": "10.0.0.3",
+      "description": "",
+      "community": "watcheye",
+      "port": 161
+    }
+  },
+  {
+    "model": "collector.instance",
+    "pk": 1,
+    "fields": {
+      "group": "tcp",
+      "host": "host1",
+      "oid": 0,
+      "name": ""
+    }
+  },
+  {
+    "model": "collector.instance",
+    "pk": 2,
+    "fields": {
+      "group": "LDAPv3",
+      "host": "host1",
+      "oid": 1,
+      "name": "one"
+    }
+  },
+  {
+    "model": "collector.instance",
+    "pk": 3,
+    "fields": {
+      "group": "LDAPv3",
+      "host": "host1",
+      "oid": 2,
+      "name": "two"
+    }
+  },
+  {
+    "model": "collector.instance",
+    "pk": 4,
+    "fields": {
+      "group": "SNMP",
+      "host": "host1",
+      "oid": 0,
+      "name": ""
+    }
+  },
+  {
+    "model": "collector.instance",
+    "pk": 5,
+    "fields": {
+      "group": "tcp",
+      "host": "host2",
+      "oid": 0,
+      "name": ""
+    }
+  },
+  {
+    "model": "collector.instance",
+    "pk": 6,
+    "fields": {
+      "group": "LDAPv3",
+      "host": "host2",
+      "oid": 1,
+      "name": "one"
+    }
+  },
+  {
+    "model": "collector.instance",
+    "pk": 7,
+    "fields": {
+      "group": "LDAPv3",
+      "host": "host2",
+      "oid": 2,
+      "name": "two"
+    }
+  },
+  {
+    "model": "collector.instance",
+    "pk": 8,
+    "fields": {
+      "group": "SNMP",
+      "host": "host2",
+      "oid": 0,
+      "name": ""
+    }
+  },
+  {
+    "model": "collector.instance",
+    "pk": 9,
+    "fields": {
+      "group": "NonSNMP",
+      "host": "host2",
+      "oid": 0,
+      "name": ""
+    }
+  },  {
+    "model": "collector.instance",
+    "pk": 10,
+    "fields": {
+      "group": "interface",
+      "host": "host2",
+      "oid": 1,
+      "name": "lo"
+    }
+  },
+  {
+    "model": "collector.tagvalue",
+    "pk": 1,
+    "fields": {
+      "tag": "cluster",
+      "host": "host1",
+      "value": "test"
+    }
+  },
+  {
+    "model": "collector.tagvalue",
+    "pk": 2,
+    "fields": {
+      "tag": "cluster",
+      "host": "host2",
+      "value": "test"
     }
   }
 ]

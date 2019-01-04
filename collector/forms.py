@@ -8,23 +8,48 @@ from django.utils.translation import gettext as _
 from . import constants
 
 
-class SampleForm(forms.Form):
+class SeriesForm(forms.Form):
     """
-    Roughly validates received sample data.
+    Roughly validates received series of data.
     """
     host = forms.CharField(max_length=constants.NAME_MAX_LENGTH)
-    parameter = forms.CharField(max_length=constants.NAME_MAX_LENGTH)
     timestamp = forms.FloatField(min_value=0)
+    samples = forms.Field()
+
+    def clean_samples(self):
+        """
+        Cleans samples field. Actually delegates validation
+        to SampleForm for each sample.
+
+        :return: list of samples
+        :raise: ValidationError
+        """
+        cleaned = []
+        for row in self.data['samples']:
+            form = SampleForm(data=row)
+            if form.is_valid():
+                cleaned.append(form.cleaned_data)
+            else:
+                raise ValidationError(_('Invalid value.'), code='invalid')
+        return cleaned
+
+
+class SampleForm(forms.Form):
+    """
+    Roughly validates received data sample.
+    """
+    parameter = forms.CharField(max_length=constants.NAME_MAX_LENGTH)
+    instance = forms.CharField(max_length=constants.NAME_MAX_LENGTH,
+                               required=False)
     value = forms.Field(
         validators=[
-            validators.ProhibitNullCharactersValidator,
-
+            validators.ProhibitNullCharactersValidator
         ]
     )
 
     def clean_value(self):
         """
-        Cleans value field and verifies it's type. Allowed types are:
+        Cleans value field and verifies its type. Allowed types are:
         int, float (finite), bool and str.
 
         :return: unchanged value

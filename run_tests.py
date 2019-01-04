@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
+import argparse
 import sys
 
 import django
 from celery import Celery
 from django.conf import settings
 from django.test.utils import get_runner
-import argparse
 
 
 def main():
@@ -18,12 +18,12 @@ def main():
                 'django.contrib.contenttypes',
                 'django.contrib.admin',
                 'django.contrib.sessions',
-                'collector.apps.CollectorConfig',
+                'collector.apps.CollectorConfig'
             ],
             DATABASE_ENGINE='django.db.backends.sqlite3',
             DATABASES={
                 'default': {
-                    'ENGINE': 'django.db.backends.sqlite3',
+                    'ENGINE': 'django.db.backends.sqlite3'
                 }
             },
             ROOT_URLCONF='test_urls',
@@ -52,13 +52,13 @@ def main():
         type=int,
         choices=[0, 1, 2, 3],
         help='Verbosity level; 0=minimal output, 1=normal output, '
-             '2=verbose output, 3=very verbose output',
+             '2=verbose output, 3=very verbose output'
     )
     parser.add_argument(
         '--failfast',
         action='store_true',
         help='Tells Django to stop running the test suite '
-             'after first failed test.',
+             'after first failed test.'
     )
     test_runner_class.add_arguments(parser)
     args = parser.parse_args()

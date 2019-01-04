@@ -1,10 +1,10 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from django.test import TestCase, override_settings
 from pyasn1.type.char import UTF8String
 from pyasn1.type.univ import Integer
 
-from .utils import get_cmd_factory, make_timestamp
+from .utils import get_cmd_factory
 from .. import tasks
 
 
@@ -24,11 +24,13 @@ class TasksTests(TestCase):
         self.assertEqual(get_cmd.call_count, 2)
         self.assertEqual(write_points.call_count, 2)
 
-    def test_aggregator(self):
+    def test_chunks(self):
         """
-        Tests if aggregator splits all data into right amount of chunks.
+        Tests if chunks iterator splits all data into right amount of
+        chunks.
         """
-        self.assertEqual(len(list(tasks.aggregator())), 2)
+        vector = ['spam'] * (tasks.SNMP_MAX_PARAMETERS_IN_QUERY + 1)
+        self.assertEqual(len(list(tasks.chunks(vector))), 2)
 
     @override_settings(CELERY_TASK_ALWAYS_EAGER=True)
     @patch('collector.tasks.getCmd',
@@ -49,7 +51,7 @@ class TasksTests(TestCase):
         """
         Tests if unrecognized parameter is discarded.
         """
-        tasks.add_samples('host1', make_timestamp(), [('unknown', 1)])
+        tasks.add_samples([[('unknown', 1)]], 'host1')
         self.assertFalse(write_points.called)
         self.assertEqual(logger_warning.call_count, 1)
 
@@ -58,7 +60,10 @@ class TasksTests(TestCase):
         """
         Positive scenario test of adding sample to database task.
         """
-        tasks.add_samples('host1', make_timestamp(), [('CPU', 1.0)])
+        tasks.add_samples(
+            [[('1.3.6.1.2.1.6.9.0', 0), ('1.3.6.1.2.1.6.12.0', 0)]],
+            'host1'
+        )
         self.assertTrue(write_points.called)
 
     @patch('collector.tasks.logger.error')
@@ -67,7 +72,7 @@ class TasksTests(TestCase):
         """
         Tests if sample with unexpected value type is discarded.
         """
-        tasks.add_samples('host1', make_timestamp(), [('CPU', 'a')])
+        tasks.add_samples([[('1.3.6.1.2.1.6.9.0', 'a')]], 'host1')
         self.assertFalse(write_points.called)
         self.assertTrue(logger_error.called)
 
@@ -79,37 +84,3 @@ class EmptyDBTasksTests(TestCase):
         aggregator should not fail but return empty iterator.
         """
         self.assertEqual(len(list(tasks.aggregator())), 0)
-
-
-class TestUnpackDecorator(TestCase):
-    def setUp(self):
-        self.mock = MagicMock()
-        self.func = tasks.unpack(self.mock)
-
-    def test_args(self):
-        """
-        Tuple of parameters should be converted into call with *args.
-        """
-        self.func(('ham', 'bacon'))
-        self.assertTrue(self.mock.called_with('ham', 'bacon'))
-
-    def test_kwargs(self):
-        """
-        Dict of parameters should be converted into call with **kwargs.
-        """
-        self.func({'spam': 'ham', 'eggs': 'bacon'})
-        self.assertTrue(self.mock.called_with('ham', 'bacon'))
-
-    def test_regular(self):
-        """
-        Call with more than one parameter should be left unchanged.
-        """
-        self.func('spam', 'ham', eggs='bacon')
-        self.assertTrue(self.mock.called_with('spam', 'ham', eggs='bacon'))
-
-    def test_regular_single_param(self):
-        """
-        Call with just one iterable parameter should be left unchanged.
-        """
-        self.func('spam')
-        self.assertTrue(self.mock.called_with('spam'))

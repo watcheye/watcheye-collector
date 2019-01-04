@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-09-19 10:19+0000\n"
+"POT-Creation-Date: 2018-11-19 09:56+0000\n"
 "PO-Revision-Date: 2018-09-19 12:41+0000\n"
 "Last-Translator: Andrzej Mateja <mateja.and@gmail.com>\n"
 "Language-Team: Polish <mateja.and@gmail.com>\n"
@@ -16,103 +16,217 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: collector/admin.py:18 collector/admin.py:42
+#: collector/admin.py:41
+#, python-format
+msgid "Name '%(name)s' is restricted for indexing parameter."
+msgstr "Nazwa '%(name)s' jest niedozwolona dla parametrów indeksujących."
+
+#: collector/admin.py:51
+#, python-format
+msgid ""
+"Name '%(name)s' is restricted for indexing parameter because it collides "
+"with the tag."
+msgstr ""
+"Nazwa '%(name)s' jest niedozwolona dla parametrów indeksujących, ponieważ "
+"koliduje z etykietą."
+
+#: collector/admin.py:81
+msgid "Tabular parameters should have non-zero OID."
+msgstr "Parametry tabelaryczne powinny mieć niezerowy OID."
+
+#: collector/admin.py:86
+msgid "Scalar parameters should have zero OID."
+msgstr "Skalarne parametry powinny mieć zerowy OID."
+
+#: collector/admin.py:101
+msgid "Tabular parameters require a name."
+msgstr "Parametry tabelaryczne wymagają nazwy."
+
+#: collector/admin.py:106
+msgid "Scalar parameters does not require a name."
+msgstr "Parametry skalarne nie wymagają nazwy."
+
+#: collector/admin.py:127
+#, python-format
+msgid "Name '%(name)s' is restricted."
+msgstr "Nazwa '%(name)s' jest niedozwolona."
+
+#: collector/admin.py:133
+#, python-format
+msgid "Name '%(name)s' collides with indexing parameter."
+msgstr "Nazwa '%(name)s' koliduje z parametrem indeksującym."
+
+#: collector/admin.py:172
+msgid "Add Parameter"
+msgstr "Dodaj Parametr"
+
+#: collector/admin.py:173
+msgid "Add Parameters"
+msgstr "Dodaj Parametry"
+
+#: collector/admin.py:231 collector/admin.py:258
 msgid "SNMP"
 msgstr "SNMP"
 
-#: collector/admin.py:67
+#: collector/admin.py:281
 msgid "in use?"
 msgstr "używany?"
 
-#: collector/forms.py:37
+#: collector/apps.py:7
+msgid "collector"
+msgstr "kolektor"
+
+#: collector/forms.py:33 collector/forms.py:62
 msgid "Invalid value."
 msgstr "Nieprawidłowa wartość."
 
-#: collector/models.py:13
-msgid "float"
-msgstr "zmiennoprzecinkowy"
-
 #: collector/models.py:14
-msgid "integer"
-msgstr "całkowity"
+msgid "scalar"
+msgstr "skalarny"
 
 #: collector/models.py:15
-msgid "string"
-msgstr "napis"
+msgid "tabular"
+msgstr "tabelaryczny"
 
-#: collector/models.py:16
-msgid "boolean"
-msgstr "zero-jedynkowy"
-
-#: collector/models.py:19 collector/models.py:53
+#: collector/models.py:18 collector/models.py:73 collector/models.py:113
+#: collector/models.py:128 collector/models.py:203
 msgid "name"
 msgstr "nazwa"
 
-#: collector/models.py:22
-msgid "Unique and unchangeable parameter identifier."
-msgstr "Niepowtarzalny i niezmienny identyfikator parametru."
+#: collector/models.py:21
+msgid "Unique and unchangeable group identifier."
+msgstr "Niepowtarzalny i niezmienny identyfikator grupy."
 
-#: collector/models.py:25
+#: collector/models.py:24 collector/models.py:79
 msgid "type"
 msgstr "typ"
 
 #: collector/models.py:27
-msgid "Unchangeable parameter type."
-msgstr "Niezmienny typ parametru."
+msgid ""
+"SNMP parameters are of scalar or tabular type. Please verify right settings "
+"with documentation."
+msgstr ""
+"Parametry SNMP są typu skalarnego lub tabelarycznego. Proszę sprawdzić "
+"prawidłowe ustawienia w dokumentacji."
 
-#: collector/models.py:30 collector/models.py:63
+#: collector/models.py:31 collector/models.py:84 collector/models.py:138
 msgid "description"
 msgstr "opis"
 
-#: collector/models.py:32
-msgid "A few words to show e.g. parameter purpose or meaning."
-msgstr "Kilka słów dla objaśnienia np. celu lub znaczenia parametru."
+#: collector/models.py:33
+msgid "A few words to show e.g. group purpose or meaning."
+msgstr "Kilka słów dla objaśnienia np. celu lub znaczenia grupy."
 
-#: collector/models.py:35
+#: collector/models.py:36 collector/models.py:97 collector/models.py:197
 msgid "OID"
 msgstr "OID"
 
-#: collector/models.py:39
-msgid "Object Identifier uniquely identifies monitored parameter."
-msgstr "Identyfikator obiektu jednoznacznie określający monitorowany parametr."
+#: collector/models.py:40
+msgid ""
+"Object identifier uniquely identifies group of monitored parameters. "
+"<b>Usually full OID without two last parts.</b>"
+msgstr ""
+"Identyfikator obiektu jednoznacznie określający grupę monitorowanych "
+"parametrów. <b>Zwykle OID bez dwóch ostatnich części.</b>"
 
-#: collector/models.py:44
+#: collector/models.py:47
+msgid "Group"
+msgstr "Grupa"
+
+#: collector/models.py:48
+msgid "Groups"
+msgstr "Grupy"
+
+#: collector/models.py:60
+msgid "float"
+msgstr "zmiennoprzecinkowy"
+
+#: collector/models.py:61
+msgid "integer"
+msgstr "całkowity"
+
+#: collector/models.py:62
+msgid "string"
+msgstr "napis"
+
+#: collector/models.py:63
+msgid "boolean"
+msgstr "zero-jedynkowy"
+
+#: collector/models.py:70 collector/models.py:187
+msgid "group"
+msgstr "grupa"
+
+#: collector/models.py:76
+msgid "Unique and unchangeable parameter identifier."
+msgstr "Niepowtarzalny i niezmienny identyfikator parametru."
+
+#: collector/models.py:81
+msgid "Unchangeable parameter type."
+msgstr "Niezmienny typ parametru."
+
+#: collector/models.py:86
+msgid "A few words to show e.g. parameter purpose or meaning."
+msgstr "Kilka słów dla objaśnienia np. celu lub znaczenia parametru."
+
+#: collector/models.py:89
+msgid "indexing"
+msgstr "indeksujący"
+
+#: collector/models.py:92
+msgid ""
+"Should this parameter be used as a indexing tag?\n"
+"⚠️ Using too many parameters as tags can have significant performance impact.️"
+msgstr ""
+"Czy ten parametr ma być użyty jako etykieta?\n"
+"⚠️ Użycie zbyt dużej liczby parametrów jako etykiet może poważnie wpłynąć na "
+"wydajność."
+
+#: collector/models.py:100
+msgid "Last but one OID part."
+msgstr "Przedostatnia część OID."
+
+#: collector/models.py:104
 msgid "Parameter"
 msgstr "Parametr"
 
-#: collector/models.py:45
+#: collector/models.py:105
 msgid "Parameters"
 msgstr "Parametry"
 
-#: collector/models.py:56
+#: collector/models.py:119
+msgid "Tag"
+msgstr "Etykieta"
+
+#: collector/models.py:120
+msgid "Tags"
+msgstr "Etykiety"
+
+#: collector/models.py:131
 msgid "Unique and unchangeable host identifier."
 msgstr "Niepowtarzalny i niezmienny identyfikator hosta."
 
-#: collector/models.py:59
+#: collector/models.py:134
 msgid "IP address"
 msgstr "Adres IP"
 
-#: collector/models.py:60
+#: collector/models.py:135
 msgid "Internet Protocol version 4 or 6 address."
 msgstr "Adres protokołu internetowego w wersji 4 lub 6."
 
-#: collector/models.py:65
+#: collector/models.py:140
 msgid "A few words to show e.g. host purpose or location."
 msgstr "Kilka słów dla objaśnienia np. celu lub lokalizacji hosta."
 
-#: collector/models.py:71
-msgid "parameters"
-msgstr "parametry"
+#: collector/models.py:147
+msgid "groups"
+msgstr "grupy"
 
-#: collector/models.py:72
-msgid "Choosing parameters enables their collection for the host.<br/>"
-msgstr "Wybranie parametrów aktywuje ich zbieranie dla hosta.<br/>"
-
-#: collector/models.py:76
+#: collector/models.py:150
 msgid "community name"
 msgstr "nazwa społeczności"
 
-#: collector/models.py:80
+#: collector/models.py:154
 msgid ""
 "SNMP mandates that the SNMP agents should accept request messages only if "
 "the community string in the message matches its community name. <b>Ensure "
@@ -122,20 +236,60 @@ msgstr ""
 "społeczności zawarta w wiadomości zgadza się z ich nazwą społeczności. "
 "<b>Upewnij się, że takie same wartości są skonfigurowane na urządzeniu.</b>"
 
-#: collector/models.py:86
+#: collector/models.py:160
 msgid "port"
 msgstr "port"
 
-#: collector/models.py:88
+#: collector/models.py:162
 msgid "Set SNMP GET port. <b>Ensure same value is set on the device.</b>"
 msgstr ""
 "Ustaw port SNMP GET. <b>Upewnij się, że takie same wartości są "
 "skonfigurowane na urządzeniu.</b>"
 
-#: collector/models.py:93
+#: collector/models.py:170
+msgid "tags"
+msgstr "etykiety"
+
+#: collector/models.py:174
 msgid "Host"
 msgstr "Host"
 
-#: collector/models.py:94
+#: collector/models.py:175
 msgid "Hosts"
 msgstr "Hosty"
+
+#: collector/models.py:194 collector/models.py:231
+msgid "host"
+msgstr "host"
+
+#: collector/models.py:200
+msgid "Last OID part."
+msgstr "Ostatnia część OID."
+
+#: collector/models.py:206
+msgid "Instance identifier. If non-empty is used as tag."
+msgstr "Identyfikator instancji. Służy za etykietę, jeśli jest niepusty."
+
+#: collector/models.py:211
+msgid "Instance"
+msgstr "Instancja"
+
+#: collector/models.py:212
+msgid "Instances"
+msgstr "Instancje"
+
+#: collector/models.py:224
+msgid "tag"
+msgstr "etykieta"
+
+#: collector/models.py:234
+msgid "value"
+msgstr "wartość"
+
+#: collector/models.py:239
+msgid "Tag Value"
+msgstr "Wartoość Etykiety"
+
+#: collector/models.py:240
+msgid "Tag Values"
+msgstr "Wartości Etykiet"
