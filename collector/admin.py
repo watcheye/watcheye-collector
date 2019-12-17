@@ -38,7 +38,7 @@ class ParameterCollisionForm(forms.ModelForm):
 
         if indexing:
             if name in restricted_names:
-                message = _('Name \'%(name)s\' is restricted for '
+                message = _("Name '%(name)s' is restricted for "
                             'indexing parameter.')
                 error = forms.ValidationError(
                     message=message,
@@ -48,7 +48,7 @@ class ParameterCollisionForm(forms.ModelForm):
                 self.add_error('name', error)
                 self.add_error('indexing', error)
             elif Tag.objects.filter(name=name).exists():
-                message = _('Name \'%(name)s\' is restricted for indexing '
+                message = _("Name '%(name)s' is restricted for indexing "
                             'parameter because it collides with the tag.')
                 error = forms.ValidationError(
                     message=message,
@@ -124,13 +124,13 @@ class TagForm(forms.ModelForm):
 
         if name in restricted_names:
             raise forms.ValidationError(
-                message=_('Name \'%(name)s\' is restricted.'),
+                message=_("Name '%(name)s' is restricted."),
                 code='invalid',
                 params={'name': name}
             )
         elif Parameter.objects.filter(name=name, indexing=True).exists():
             raise forms.ValidationError(
-                message=_('Name \'%(name)s\' collides '
+                message=_("Name '%(name)s' collides "
                           'with indexing parameter.'),
                 code='invalid',
                 params={'name': name}
