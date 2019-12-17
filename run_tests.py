@@ -16,9 +16,15 @@ def main():
             INSTALLED_APPS=[
                 'django.contrib.auth',
                 'django.contrib.contenttypes',
+                'django.contrib.messages',
                 'django.contrib.admin',
                 'django.contrib.sessions',
                 'collector.apps.CollectorConfig'
+            ],
+            MIDDLEWARE=[
+                'django.contrib.sessions.middleware.SessionMiddleware',
+                'django.contrib.auth.middleware.AuthenticationMiddleware',
+                'django.contrib.messages.middleware.MessageMiddleware'
             ],
             DATABASE_ENGINE='django.db.backends.sqlite3',
             DATABASES={
@@ -27,6 +33,19 @@ def main():
                 }
             },
             ROOT_URLCONF='test_urls',
+            TEMPLATES=[
+                {
+                    'BACKEND':
+                        'django.template.backends.django.DjangoTemplates',
+                    'OPTIONS': {
+                        'context_processors': [
+                            'django.contrib.auth.context_processors.auth',
+                            'django.contrib.messages.context_processors.'
+                            'messages'
+                        ]
+                    }
+                }
+            ],
             INFLUXDB_HOST='localhost',
             INFLUXDB_USERNAME='user',
             INFLUXDB_PASSWORD='secret',
